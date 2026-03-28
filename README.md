@@ -7,4 +7,5 @@ It will then wait 60 seconds before trying to pull\
 This also applies if there are no new logs to pull\
 If it fails to pull those logs, it will try again in 3 seconds
 
-I want to eventually hash existing logs to verify validity especially if communication is lost
+I want to eventually hash existing logs to verify validity especially if communication is lost\
+I could do this by running python code remotely via python -c [code_to_run]
