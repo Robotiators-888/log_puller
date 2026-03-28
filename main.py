@@ -48,10 +48,14 @@ def main():
             time.sleep(bad_retry)
 def get_logs() -> str:
     try:
-        filesUnparsed = subprocess.run(["ssh", "admin@" + ip + "'ls " + log_path + "'"], check=True, capture_output=True, text=True).stdout
+        filesUnparsed = subprocess.run(["ssh", "admin@" + ip, "'ls " + log_path + "'"], check=True, capture_output=True, text=True).stdout
     except subprocess.CalledProcessError as e:
         return "couldn't connect to the robot"
     files = filesUnparsed.splitlines()
+    files.pop()
+    files.pop()
+    files.pop()
+    files.pop()
     local_files = os.listdir(local_log_path)
     hasDoneSomething = False
     for file in files:
