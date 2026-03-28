@@ -13,6 +13,9 @@ def add_dot_to_string(s: str) -> str:
             ret += "."
     return ret
 
+bad_retry = int(3)
+good_retry = int(60)
+
 # Define the team number and construct the IP address
 team_number = "888"
 
@@ -33,16 +36,16 @@ def main():
         result = get_logs()
         if result == "couldn't connect to the robot":
             print("Couldn't connect to the robot")
-            time.sleep(3)
+            time.sleep(bad_retry)
         elif result == "logs retrieved successfully":
             print("Logs retrieved successfully")
-            time.sleep(60)
+            time.sleep(good_retry)
         elif result == "No new logs to retrieve":
             print("No new logs to retrieve")
-            time.sleep(60)
+            time.sleep(good_retry)
         else:
             print(result)
-            time.sleep(3)
+            time.sleep(bad_retry)
 def get_logs() -> str:
     try:
         filesUnparsed = subprocess.run(["ssh", "admin@" + ip + "'ls " + log_path + "'"], check=True, capture_output=True, text=True).stdout
