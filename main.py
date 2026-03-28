@@ -2,10 +2,23 @@ import os
 import subprocess
 import time
 
-# Define the team number and construct the IP address
-team_number = "0888"
+# Helper function
+def add_dot_to_string(s: str) -> str:
+    ret = ""
+    i = 0
+    for char in s:
+        ret += char
+        i += 1
+        if i == len(s) - 2:
+            ret += "."
+    return ret
 
-ip = "10." + team_number[0] + team_number[1] + "." + team_number[2] + team_number[3] + ".2"
+# Define the team number and construct the IP address
+team_number = "888"
+
+team_number_ip = add_dot_to_string(team_number)
+
+ip = "10." + team_number_ip + ".2"
 
 log_path = "/dev/sda1/logs/"
 
@@ -49,6 +62,5 @@ def get_logs() -> str:
         return "No new logs to retrieve"
     else:
         return "logs retrieved successfully"
-
 
 main()
