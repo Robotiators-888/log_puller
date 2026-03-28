@@ -23,7 +23,7 @@ team_number_ip = add_dot_to_string(team_number)
 
 ip = "10." + team_number_ip + ".2"
 
-log_path = "/dev/sda1/logs/"
+log_path = "/media/sda1/logs/"
 
 local_log_path = os.path.expandvars("%USERPROFILE%/Documents/logs/")
 
