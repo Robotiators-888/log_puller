@@ -7,7 +7,7 @@ import sys
 shouldEnd: bool = False
 hasEnded: bool = False
 
-def signal_handler():
+def signal_handler(signal, frame):
     shouldEnd = True
     while not hasEnded:
         pass
