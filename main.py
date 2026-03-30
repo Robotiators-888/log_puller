@@ -64,7 +64,7 @@ def get_logs() -> str:
     for file in files:
         if file not in local_files:
             try:
-                subprocess.run(["scp", "admin@" + ip + ":" + log_path + file, local_log_path], check=True)
+                subprocess.run(["scp", "-r" , "admin@" + ip + ":" + log_path + file, local_log_path], check=True)
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
                 return f"Error: Failed to retrieve {file}"
