@@ -1,6 +1,20 @@
 import os
 import subprocess
 import time
+import signal
+import sys
+
+shouldEnd: bool = False
+hasEnded: bool = False
+
+def signal_handler():
+    shouldEnd = True
+    while not hasEnded:
+        pass
+    sys.exit(0)
+    
+
+signal.signal(signal.SIGINT, signal_handler)
 
 # Helper function
 def add_dot_to_string(s: str) -> str:
@@ -44,9 +58,13 @@ def main():
         elif result == "No new logs to retrieve":
             print("No new logs to retrieve")
             time.sleep(good_retry)
+        elif result == "Ending":
+            print(result)
+            break
         else:
             print(result)
             time.sleep(bad_retry)
+
 def get_logs() -> str:
     try:
         result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + " 'ls " + log_path + "'"], check=True, capture_output=True, text=True)
@@ -68,6 +86,9 @@ def get_logs() -> str:
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
                 return f"Error: Failed to retrieve {file}"
+        if shouldEnd:
+            hasEnded = True
+            return "Ending"
     if not hasDoneSomething:
         return "No new logs to retrieve"
     else:
