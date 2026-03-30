@@ -13,27 +13,27 @@ def add_dot_to_string(s: str) -> str:
             ret += "."
     return ret
 
-bad_retry = int(3)
-good_retry = int(60)
+bad_retry: int = int(3)
+good_retry: int = int(60)
 
 # Define the team number and construct the IP address
-team_number = "888"
+team_number: str = "888"
 
-team_number_ip = add_dot_to_string(team_number)
+team_number_ip: str = add_dot_to_string(team_number)
 
-ip = "10." + team_number_ip + ".2"
+ip: str = "10." + team_number_ip + ".2"
 
-log_path = "/media/sda1/logs/"
+log_path: str = "/media/sda1/logs/"
 
-local_log_path = os.path.expandvars("%USERPROFILE%/Documents/logs/")
+local_log_path: str = os.path.expandvars("%USERPROFILE%/Documents/logs/")
 
-filesUnparsed = ""
+filesUnparsed: str = ""
 
-files = ""
+files: str = ""
 
 def main():
     while True:
-        result = get_logs()
+        result: str = get_logs()
         if result == "couldn't connect to the robot":
             print("Couldn't connect to the robot")
             time.sleep(bad_retry)
