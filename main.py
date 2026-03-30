@@ -36,6 +36,7 @@ def main():
         result: str = get_logs()
         if result == "couldn't connect to the robot":
             print("Couldn't connect to the robot")
+            # Maybe sleep not needed becuase of ssh's built in waiting period
             time.sleep(bad_retry)
         elif result == "logs retrieved successfully":
             print("Logs retrieved successfully")
@@ -48,7 +49,7 @@ def main():
             time.sleep(bad_retry)
 def get_logs() -> str:
     try:
-        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + "'ls " + log_path + "'"], check=True, capture_output=True, text=True)
+        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + " 'ls " + log_path + "'"], check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Exception {e}")
         return "couldn't connect to the robot"
