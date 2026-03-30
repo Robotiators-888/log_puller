@@ -48,9 +48,11 @@ def main():
             time.sleep(bad_retry)
 def get_logs() -> str:
     try:
-        filesUnparsed = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + "'ls " + log_path + "'"], check=True, capture_output=True, text=True).stdout
+        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + "'ls " + log_path + "'"], check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
+        print(f"Exception {e}")
         return "couldn't connect to the robot"
+    filesUnparsed = result.stdout
     files = filesUnparsed.splitlines()
     files.pop()
     files.pop()
