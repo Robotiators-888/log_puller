@@ -8,11 +8,8 @@ shouldEnd: bool = False
 hasEnded: bool = False
 
 def signal_handler(signal, frame):
+    global shouldEnd
     shouldEnd = True
-    while not hasEnded:
-        pass
-    sys.exit(0)
-    
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -88,7 +85,8 @@ def get_logs() -> str:
                 return f"Error: Failed to retrieve {file}"
         if shouldEnd:
             hasEnded = True
-            return "Ending"
+            print("Ending")
+            sys.exit(0)
     if not hasDoneSomething:
         return "No new logs to retrieve"
     else:
