@@ -90,36 +90,18 @@ def get_logs() -> str:
         filenames.append(parsedInfo[8].replace(log_path, ""))
         # The 4th segment gives us the size of the file in bytes
         filesizes.append(parsedInfo[4])
-    # Build a map of local files relative to local_log_path -> size (bytes)
-    # Use recursive glob to find files in nested folders
-    local_files_full = [p for p in glob.glob(os.path.join(local_log_path, "**", "*"), recursive=True) if os.path.isfile(p)]
-    # Relative names (so they match the remote-relative filenames we built earlier)
-    local_file_names = [os.path.relpath(p, local_log_path) for p in local_files_full]
-    local_file_sizes = {os.path.relpath(p, local_log_path): os.path.getsize(p) for p in local_files_full}
-
+    # Gets file names using glob
+    # Takes our directory
+    local_file_names = map(lambda path: path.replace(local_log_path, ""), glob.glob(local_log_path+"*/*"))
+    local_file_sizes = map(lambda name: os.path.getsize(local_log_path+name), local_file_names)
     hasDoneSomething = False
-    # Iterate by index so we can compare filenames and sizes
-    for i in range(len(filenames)):
-        remote_name = filenames[i]
-        remote_size = int(filesizes[i])
-        needs_copy = False
-        if remote_name not in local_file_sizes:
-            needs_copy = True
-        elif local_file_sizes.get(remote_name, -1) != remote_size:
-            needs_copy = True
-
-        if needs_copy:
-            # Ensure local destination directory exists before scp
-            local_dest = os.path.join(local_log_path, remote_name)
-            local_dir = os.path.dirname(local_dest)
-            if local_dir and not os.path.exists(local_dir):
-                os.makedirs(local_dir, exist_ok=True)
+    for i in len(filenames):
+        if filenames[i] not in local_file_names or filesizes[i] != local_file_sizes[i]:
             try:
-                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + remote_name, local_dest], check=True)
+                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + filenames[i], local_log_path], check=True)
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
-                return f"Error: Failed to retrieve {remote_name}"
-
+                return f"Error: Failed to retrieve {filenames[i]}"
         if shouldEnd:
             print("Ending")
             sys.exit(0)
