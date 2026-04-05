@@ -3,9 +3,9 @@ import subprocess
 import time
 import signal
 import sys
+import glob
 
 shouldEnd: bool = False
-hasEnded: bool = False
 
 def signal_handler(signal, frame):
     global shouldEnd
@@ -45,15 +45,15 @@ files: str = ""
 def main():
     while True:
         result: str = get_logs()
-        if result == "couldn't connect to the robot":
-            print("Couldn't connect to the robot")
+        if result == "Couldn't connect to the robot":
+            print(result)
             # Maybe sleep not needed becuase of ssh's built in waiting period
             time.sleep(bad_retry)
-        elif result == "logs retrieved successfully":
-            print("Logs retrieved successfully")
+        elif result == "Logs retrieved successfully":
+            print(result)
             time.sleep(good_retry)
         elif result == "No new logs to retrieve":
-            print("No new logs to retrieve")
+            print(result)
             time.sleep(good_retry)
         elif result == "Ending":
             print(result)
@@ -64,32 +64,68 @@ def main():
 
 def get_logs() -> str:
     try:
-        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + " 'ls " + log_path + "'"], check=True, capture_output=True, text=True)
+        # find [log_path] -type f finds all files in the log path and -exec ls -l {} + gives us info about every file
+        # We only care about the name and the size of the files
+        # Also {} gets subsituted by the filename and + tells the find command to take all the results and feed them into ls all at once like ls -l file1 file2 instade of running ls -l once for every file which speeds things up a lot
+        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + " 'find " + log_path + " -type f -exec ls -l {} +'"], check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Exception {e}")
-        return "couldn't connect to the robot"
+        return "Couldn't connect to the robot"
+    # Split files by newlines
     filesUnparsed = result.stdout
-    files = filesUnparsed.splitlines()
-    files.pop()
-    files.pop()
-    files.pop()
-    files.pop()
-    local_files = os.listdir(local_log_path)
+    fileinfos = filesUnparsed.splitlines()
+    # Get rid of those 4 NI auth login lines, not using a loop is probably more optimized
+    fileinfos.pop()
+    fileinfos.pop()
+    fileinfos.pop()
+    fileinfos.pop()
+    filenames = []
+    filesizes = []
+    # Fill the name and length lists
+    for file in fileinfos:
+        # Split the output by the spaces
+        parsedInfo = file.split(' ')
+        # The 8th segment gives us the absolute path of the file
+        # We then convert this to a relative path from the log path
+        filenames.append(parsedInfo[8].replace(log_path, ""))
+        # The 4th segment gives us the size of the file in bytes
+        filesizes.append(parsedInfo[4])
+    # Build a map of local files relative to local_log_path -> size (bytes)
+    # Use recursive glob to find files in nested folders
+    local_files_full = [p for p in glob.glob(os.path.join(local_log_path, "**", "*"), recursive=True) if os.path.isfile(p)]
+    # Relative names (so they match the remote-relative filenames we built earlier)
+    local_file_names = [os.path.relpath(p, local_log_path) for p in local_files_full]
+    local_file_sizes = {os.path.relpath(p, local_log_path): os.path.getsize(p) for p in local_files_full}
+
     hasDoneSomething = False
-    for file in files:
-        if file not in local_files:
+    # Iterate by index so we can compare filenames and sizes
+    for i in range(len(filenames)):
+        remote_name = filenames[i]
+        remote_size = int(filesizes[i])
+        needs_copy = False
+        if remote_name not in local_file_sizes:
+            needs_copy = True
+        elif local_file_sizes.get(remote_name, -1) != remote_size:
+            needs_copy = True
+
+        if needs_copy:
+            # Ensure local destination directory exists before scp
+            local_dest = os.path.join(local_log_path, remote_name)
+            local_dir = os.path.dirname(local_dest)
+            if local_dir and not os.path.exists(local_dir):
+                os.makedirs(local_dir, exist_ok=True)
             try:
-                subprocess.run(["scp", "-r", "-p", "admin@" + ip + ":" + log_path + file, local_log_path], check=True)
+                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + remote_name, local_dest], check=True)
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
-                return f"Error: Failed to retrieve {file}"
+                return f"Error: Failed to retrieve {remote_name}"
+
         if shouldEnd:
-            hasEnded = True
             print("Ending")
             sys.exit(0)
-    if not hasDoneSomething:
-        return "No new logs to retrieve"
+    if hasDoneSomething:
+        return "Logs retrieved successfully"
     else:
-        return "logs retrieved successfully"
+        return "No new logs to retrieve"
 
 main()
