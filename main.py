@@ -36,7 +36,8 @@ ip: str = "10." + team_number_ip + ".2"
 
 log_path: str = "/media/sda1/logs/"
 
-local_log_path: str = os.path.expandvars("%USERPROFILE%/Documents/logs/")
+# Windows-friendly local path: use %USERPROFILE% and os.path.join so separators are correct
+local_log_path: str = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents", "logs")
 
 filesUnparsed: str = ""
 
@@ -90,18 +91,37 @@ def get_logs() -> str:
         filenames.append(parsedInfo[8].replace(log_path, ""))
         # The 4th segment gives us the size of the file in bytes
         filesizes.append(parsedInfo[4])
-    # Gets file names using glob
-    # Takes our directory
-    local_file_names = map(lambda path: path.replace(local_log_path, ""), glob.glob(local_log_path+"*/*"))
-    local_file_sizes = map(lambda name: os.path.getsize(local_log_path+name), local_file_names)
+    # Build a map of existing local files (relative to local_log_path)
+    local_files_full = [p for p in glob.glob(os.path.join(local_log_path, "**", "*"), recursive=True) if os.path.isfile(p)]
+    local_file_sizes = {os.path.relpath(p, local_log_path): os.path.getsize(p) for p in local_files_full}
+
     hasDoneSomething = False
-    for i in len(filenames):
-        if filenames[i] not in local_file_names or filesizes[i] != local_file_sizes[i]:
+    # Iterate by index to compare remote filenames/sizes with local files
+    for i in range(len(filenames)):
+        # remote filenames from the device are relative to log_path and use '/'
+        remote_name = filenames[i].lstrip('/\\')
+        try:
+            remote_size = int(filesizes[i])
+        except ValueError:
+            # If parsing failed, skip this file
+            continue
+        needs_copy = False
+        if remote_name not in local_file_sizes:
+            needs_copy = True
+        elif local_file_sizes.get(remote_name, -1) != remote_size:
+            needs_copy = True
+        if needs_copy:
+            # Build a platform-correct local destination path from the remote (split on '/')
+            local_dest = os.path.join(local_log_path, *remote_name.split('/'))
+            local_dir = os.path.dirname(local_dest)
+            if local_dir and not os.path.exists(local_dir):
+                os.makedirs(local_dir, exist_ok=True)
             try:
-                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + filenames[i], local_log_path], check=True)
+                # Copy the single file into the full destination path
+                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + remote_name, local_dest], check=True)
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
-                return f"Error: Failed to retrieve {filenames[i]}"
+                return f"Error: Failed to retrieve {remote_name}"
         if shouldEnd:
             print("Ending")
             sys.exit(0)
