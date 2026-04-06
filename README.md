@@ -7,4 +7,4 @@ Also if the file size is not correct for a log, it will pull that log again\
 It will then wait 60 seconds before trying to pull logs again\
 This also applies if there are no new logs to pull\
 If it fails to pull those logs, it will try again in 3 seconds\
-Note: pressing control + c will wait for the current file to finish transferring before exiting
+Note: pressing control + c will wait for the current log to finish copying before exiting
