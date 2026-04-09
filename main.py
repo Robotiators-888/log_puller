@@ -75,7 +75,7 @@ def get_logs() -> str:
         # find [log_path] -type f finds all files in the log path and -exec ls -l {} + gives us info about every file
         # We only care about the name and the size of the files
         # Also {} gets subsituted by the filename and + tells the find command to take all the results and feed them into ls all at once like ls -l file1 file2 instade of running ls -l once for every file which speeds things up a lot
-        result = subprocess.run(["powershell", "-Command", "ssh " + "admin@" + ip + " 'find " + log_path + " -type f -exec ls -l {} +'"], check=True, capture_output=True, text=True)
+        result = subprocess.run(["powershell", "-Command", "ssh " + f"admin@{ip}" + " 'find " + log_path + " -type f -exec ls -l {} +'"], check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Exception {e}")
         return "Couldn't connect to the robot"
@@ -129,7 +129,7 @@ def get_logs() -> str:
                 # Copy the single file into the full destination path
                 global isCopying
                 isCopying = true
-                subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + remote_name, local_dest], check=True)
+                subprocess.run(["scp", "-p", f"admin@{ip}:" + log_path + remote_name, local_dest], check=True)
                 isCopying = false
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
