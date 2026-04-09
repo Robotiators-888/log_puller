@@ -6,10 +6,17 @@ import sys
 import glob
 
 shouldEnd: bool = False
+isCopying: bool = False
 
 def signal_handler(signal, frame):
-    global shouldEnd
-    shouldEnd = True
+    # End if not copying
+    if not isCopying:
+        print("Ending not copying")
+        sys.exit(0)
+    else:
+        # Else tell it to end once done
+        global shouldEnd
+        shouldEnd = True
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -118,12 +125,15 @@ def get_logs() -> str:
                 os.makedirs(local_dir, exist_ok=True)
             try:
                 # Copy the single file into the full destination path
+                global isCopying
+                isCopying = true
                 subprocess.run(["scp", "-p", "admin@" + ip + ":" + log_path + remote_name, local_dest], check=True)
+                isCopying = false
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
                 return f"Error: Failed to retrieve {remote_name}"
         if shouldEnd:
-            print("Ending")
+            print("Ending after copy")
             sys.exit(0)
     if hasDoneSomething:
         return "Logs retrieved successfully"
