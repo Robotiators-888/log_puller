@@ -87,10 +87,12 @@ def get_logs() -> str:
     fileinfos.pop()
     fileinfos.pop()
     fileinfos.pop()
+    # Removes any empty lines
+    cleanFileInfos = [x for x in fileinfos if x]
     filenames = []
     filesizes = []
     # Fill the name and length lists
-    for file in fileinfos:
+    for file in cleanFileInfos:
         # Split the output by the spaces
         parsedInfo = file.split(' ')
         # The 8th segment gives us the absolute path of the file
