@@ -1,58 +1,46 @@
+#####################IMPORTS######################
 import os
 import subprocess
 import time
 import signal
 import sys
 import glob
+#####################CODE######################
 
-shouldEnd: bool = False
-isCopying: bool = False
+shouldEnd = False
+isCopying = False
 
+# Handles copying interrupt logic
 def signal_handler(signal, frame):
-    # End if not copying
     if not isCopying:
         print("Ending not copying")
         sys.exit(0)
     else:
-        # Else tell it to end once done
         global shouldEnd
         shouldEnd = True
 
-signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, signal_handler) # Registers
 
-# Helper function
-def add_dot_to_string(s: str) -> str:
-    ret = ""
-    i = 0
-    for char in s:
-        ret += char
-        i += 1
-        if i == len(s) - 2:
-            ret += "."
-    return ret
-
-bad_retry: int = int(3)
-good_retry: int = int(60)
+bad_retry = 3
+good_retry = 60
 
 # Define the team number and construct the IP address
-team_number: str = "888"
+team_number = "888"
 
-team_number_ip: str = add_dot_to_string(team_number)
+ip = "10." + team_number[:1] + "." + team_number[1:] + ".2"
 
-ip: str = "10." + team_number_ip + ".2"
-
-log_path: str = "/media/sda1/logs/"
+log_path = "/media/sda1/logs/"
 
 # Windows-friendly local path: use %USERPROFILE% and os.path.join so separators are correct
-local_log_path: str = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents", "logs")
+local_log_path = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents", "logs")
 
-filesUnparsed: str = ""
+filesUnparsed = ""
 
-files: str = ""
+files = ""
 
 def main():
     while True:
-        result: str = get_logs()
+        result = get_logs()
         if result == "Couldn't connect to the robot":
             print(result)
             # Maybe sleep not needed becuase of ssh's built in waiting period
@@ -70,7 +58,7 @@ def main():
             print(result)
             time.sleep(bad_retry)
 
-def get_logs() -> str:
+def get_logs():
     try:
         # find [log_path] -type f finds all files in the log path and -exec ls -l {} + gives us info about every file
         # We only care about the name and the size of the files
@@ -82,11 +70,10 @@ def get_logs() -> str:
     # Split files by newlines
     filesUnparsed = result.stdout
     fileinfos = filesUnparsed.splitlines()
-    # Get rid of those 4 NI auth login lines, not using a loop is probably more optimized
-    fileinfos.pop()
-    fileinfos.pop()
-    fileinfos.pop()
-    fileinfos.pop()
+    # Get rid of those 4 NI auth login lines
+    result.split("\n")
+    for i in range(4):
+        fileinfos.pop()
     # Removes any empty lines
     cleanFileInfos = [x for x in fileinfos if x]
     filenames = []
@@ -128,9 +115,10 @@ def get_logs() -> str:
             try:
                 # Copy the single file into the full destination path
                 global isCopying
-                isCopying = true
+                isCopying = True
+                breakpoint
                 subprocess.run(["scp", "-p", f"admin@{ip}:" + log_path + remote_name, local_dest], check=True)
-                isCopying = false
+                isCopying = False
                 hasDoneSomething = True
             except subprocess.CalledProcessError as e:
                 return f"Error: Failed to retrieve {remote_name}"
