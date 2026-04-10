@@ -93,7 +93,7 @@ def get_logs():
 
     hasDoneSomething = False
     # Iterate by index to compare remote filenames/sizes with local files
-    for i in range(len(filenames)):
+    for i in range(len(filenames)-1,-1,-1):
         # remote filenames from the device are relative to log_path and use '/'
         remote_name = filenames[i].lstrip('/\\')
         try:
